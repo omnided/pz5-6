@@ -11,11 +11,11 @@ const config: ConnectionOptions = {
   database: process.env.POSTGRES_DB,
   synchronize: false,
   logging: false,
-  entities: ['src/orm/entities/**/*.ts'],
+  entities: ['src/orm/entities/users/**/*.ts'],
   migrations: ['src/orm/migrations/**/*.ts'],
   subscribers: ['src/orm/subscriber/**/*.ts'],
   cli: {
-    entitiesDir: 'src/orm/entities',
+    entitiesDir: 'src/orm/entities/users',
     migrationsDir: 'src/orm/migrations',
     subscribersDir: 'src/orm/subscriber',
   },
