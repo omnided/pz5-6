@@ -1,0 +1,1 @@
+export type blood_type = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';

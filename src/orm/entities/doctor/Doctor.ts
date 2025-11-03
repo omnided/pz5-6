@@ -8,22 +8,22 @@ export class Doctor {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  Specialty_id: number;
+  @Column({ name: 'specialty_id' })
+  specialty_id: number;
 
-  @Column({ length: 40, unique: true })
-  Doctor_fullname: string;
+  @Column({ length: 40, unique: true, name: 'doctor_fullname' })
+  doctor_fullname: string;
 
-  @Column({ length: 10, nullable: true, unique: true })
-  Doctor_number: string;
+  @Column({ length: 10, nullable: true, unique: true, name: 'doctor_number' })
+  doctor_number: string;
 
-  @Column()
-  Doctor_office: number;
+  @Column({ name: 'doctor_office' })
+  doctor_office: number;
 
-  @Column({ length: 100, nullable: true })
-  Doctor_workschedule: string;
+  @Column({ length: 100, nullable: true, name: 'doctor_workschedule' })
+  doctor_workschedule: string;
 
   @ManyToOne(() => Specialty)
-  @JoinColumn({ name: 'Specialty_id' })
+  @JoinColumn({ name: 'specialty_id' })
   specialty: Specialty;
 }

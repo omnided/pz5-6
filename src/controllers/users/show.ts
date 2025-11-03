@@ -3,6 +3,7 @@ import { getRepository } from 'typeorm';
 
 import { User } from 'orm/entities/users/User';
 import { CustomError } from 'utils/response/custom-error/CustomError';
+import { userResponseDto } from 'dto/userResponseDto';
 
 export const show = async (req: Request, res: Response, next: NextFunction) => {
   const id = req.params.id;
@@ -10,14 +11,14 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
   const userRepository = getRepository(User);
   try {
     const user = await userRepository.findOne(id, {
-      select: ['id', 'username', 'name', 'email', 'role', 'language', 'created_at', 'updated_at'],
+      select: ['id', 'username', 'name', 'email', 'role', 'language', 'created_at', 'updated_at']
     });
-
+    const userDto = new userResponseDto(user);
     if (!user) {
       const customError = new CustomError(404, 'General', `User with id:${id} not found.`, ['User not found.']);
       return next(customError);
     }
-    res.customSuccess(200, 'User found', user);
+    res.customSuccess(200, 'User found', userDto);
   } catch (err) {
     const customError = new CustomError(400, 'Raw', 'Error', null, err);
     return next(customError);

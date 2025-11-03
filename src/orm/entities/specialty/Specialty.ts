@@ -6,9 +6,9 @@ export class Specialty {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 30 })
-  Specialty_name: string;
+  @Column({ length: 30, name: 'specialty_name' })
+  specialty_name: string;
 
-  @Column('numeric', { precision: 7, scale: 2, nullable: true })
-  Specialty_salary: number;
+  @Column('numeric', { precision: 7, scale: 2, nullable: true, name: 'specialty_salary' })
+  specialty_salary: number;
 }
