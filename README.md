@@ -253,4 +253,7 @@ export class PatientResponseDto {
 }
 ```
 # Скріншоти з POSTMAN
-
+## Демонстрування валідації від middleware-функції
+![](img/10.png)
+## Демонстрування ResponseDTO
+![](img/11.png)
