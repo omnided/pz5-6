@@ -1,83 +1,96 @@
-#  TypeORM / Express / TypeScript RESTful API boilerplate
+# Документація сутностей та API
 
-[![CI][build-badge]][build-url]
-[![TypeScript][typescript-badge]][typescript-url]
-[![prettier][prettier-badge]][prettier-url]
-![Heisenberg](misc/heisenberg.png)
+##  Реалізовані сутності
 
-Boilerplate with focus on best practices and painless developer experience:
+### Doctor
+- **Таблиця:** `doctor`
+- **Поля:**
+  - `id` — первинний ключ
+  - `specialty_id` — зовнішній ключ → `specialty.id`
+  - `doctor_fullname` — ПІБ лікаря (унікальне, max 40 символів)
+  - `doctor_number` — код лікаря (унікальне, max 10 символів, nullable)
+  - `doctor_office` — номер кабінету (1–999, перевірка через `@Check`)
+  - `doctor_workschedule` — графік роботи (nullable, max 100 символів)
+- **Зв’язки:**
+  - `ManyToOne` → `Specialty`
 
-- Minimal setup that can be extended 🔧
-- Spin it up with single command 🌀
-- TypeScript first
-- RESTful APIs
-- JWT authentication with role based authorization
+---
 
-## Requirements
+### Medcard
+- **Таблиця:** `medcard`
+- **Поля:**
+  - `id` — первинний ключ
+  - `patient_id` — зовнішній ключ → `patient.id`
+  - `medcard_chronic` — хронічні захворювання (nullable, max 50 символів)
+  - `medcard_createdate` — дата створення картки
+  - `medcard_bloodtype` — група крові (varchar(3), default: `O-`)
+  - `created_at`, `updated_at` — системні дати
+- **Зв’язки:**
+  - `ManyToOne` → `Patient` (каскадне видалення/оновлення)
 
-- [Node v16+](https://nodejs.org/)
-- [Docker](https://www.docker.com/)
+---
 
-## Running
+### Patient
+- **Таблиця:** `patient`
+- **Поля:**
+  - `id` — первинний ключ
+  - `patient_fullname` — ПІБ пацієнта (унікальне, max 40 символів)
+  - `patient_sex` — стать (varchar(10), default: `other`)
+  - `patient_address` — адреса (nullable, max 30 символів)
+  - `patient_registerdate` — дата реєстрації
+  - `patient_number` — номер пацієнта (унікальне, nullable, max 20 символів)
+  - `patient_birthdaydate` — дата народження
+  - `created_at`, `updated_at` — системні дати
+- **Зв’язки:**
+  - `OneToMany` → `Medcard`
 
-_Easily set up a local development environment with single command!_
+---
 
-- clone the repo
-- `npm run docker:dev` 🚀
+### Specialty
+- **Таблиця:** `specialty`
+- **Поля:**
+  - `id` — первинний ключ
+  - `specialty_name` — назва спеціальності (varchar(30))
+  - `specialty_salary` — зарплата (numeric, 8000–25000, перевірка через `@Check`)
+- **Зв’язки:**
+  - `OneToMany` → `Doctor`
 
-Visit [localhost:4000](http://localhost:4000/) or if using Postman grab [config](/postman).
+---
 
-### _What happened_ 💥
+##  Зв’язки між сутностями
+- **Doctor → Specialty**: багато лікарів належать до однієї спеціальності.
+- **Medcard → Patient**: багато медкарт належать одному пацієнту.
+- **Patient → Medcard**: пацієнт має список медкарт.
+- **Doctor → Medcard**: лікар може бути прив’язаний до медкарти (через `doctor_id`, якщо додати).
 
-Containers created:
+---
 
-- Postgres database container seeded with 💊 Breaking Bad characters in `Users` table (default credentials `user=walter`, `password=white` in [.env file](./.env))
-- Node (v16 Alpine) container with running boilerplate RESTful API service
-- and one Node container instance to run tests locally or in CI
+##  Реалізовані API ендпоінти
 
-## Features:
+### Doctor API
+- `GET /doctor` — отримати список лікарів
+- `GET /doctor/{id}` — отримати лікаря за ID
+- `POST /doctor` — створити лікаря
+- `PUT /doctor/{id}` — оновити дані лікаря
+- `DELETE /doctor/{id}` — видалити лікаря
 
-- [Express](https://github.com/expressjs/express) framework
-- [TypeScript v4](https://github.com/microsoft/TypeScript) codebase
-- [TypeORM](https://typeorm.io/) using Data Mapper pattern
-- [Docker](https://www.docker.com/) environment:
-  - Easily start local development using [Docker Compose](https://docs.docker.com/compose/) with single command `npm run docker:dev`
-  - Connect to different staging or production environments `npm run docker:[stage|prod]`
-  - Ready for **microservices** development and deployment.  
-    Once API changes are made, just build and push new docker image with your favourite CI/CD tool  
-    `docker build -t <username>/api-boilerplate:latest .`  
-    `docker push <username>/api-boilerplate:latest`
-  - Run unit, integration (or setup with your frontend E2E) tests as `docker exec -ti be_boilerplate_test sh` and `npm run test`
-- Contract first REST API design:
-  - never break API again with HTTP responses and requests payloads using [type definitions](./src/types/express/index.d.ts)
-  - Consistent schema error [response](./src/utils/response/custom-error/types.ts). Your frontend will always know how to handle errors thrown in `try...catch` statements 💪
-- JWT authentication and role based authorization using custom middleware
-- Set local, stage or production [environmental variables](./config) with [type definitions](./src/types/ProcessEnv.d.ts)
-- Logging with [morgan](https://github.com/expressjs/morgan)
-- Unit and integration tests with [Mocha](https://mochajs.org/) and [Chai](https://www.chaijs.com/)
-- Linting with [ESLint](https://eslint.org/)
-- [Prettier](https://prettier.io/) code formatter
-- Git hooks with [Husky](https://github.com/typicode/husky) and [lint-staged](https://github.com/okonet/lint-staged)
-- Automated npm & Docker dependency updates with [Renovate](https://github.com/renovatebot/renovate) (set to patch version only)
-- Commit messages must meet [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) format.  
-  After staging changes just run `npm run commit` and get instant feedback on your commit message formatting and be prompted for required fields by [Commitizen](https://github.com/commitizen/cz-cli)
+### Patient API
+- `GET /patient` — отримати список пацієнтів
+- `GET /patient/{id}` — отримати пацієнта за ID
+- `POST /patient` — створити пацієнта
+- `PUT /patient/{id}` — оновити дані пацієнта
+- `DELETE /patient/{id}` — видалити пацієнта
 
-## Other awesome boilerplates:
+### Medcard API
+- `GET /medcard` — отримати список медкарт
+- `GET /medcard/{id}` — отримати медкарту за ID
+- `POST /medcard` — створити медкарту
+- `PUT /medcard/{id}` — оновити медкарту
+- `DELETE /medcard/{id}` — видалити медкарту
 
-Each boilerplate comes with it's own flavor of libraries and setup, check out others:
-
-- [Express and TypeORM with TypeScript](https://github.com/typeorm/typescript-express-example)
-- [Node.js, Express.js & TypeScript Boilerplate for Web Apps](https://github.com/jverhoelen/node-express-typescript-boilerplate)
-- [Express boilerplate for building RESTful APIs](https://github.com/danielfsousa/express-rest-es2017-boilerplate)
-- [A delightful way to building a RESTful API with NodeJs & TypeScript by @w3tecch](https://github.com/w3tecch/express-typescript-boilerplate)
-
-[build-badge]: https://github.com/mkosir/express-typescript-typeorm-boilerplate/actions/workflows/main.yml/badge.svg
-[build-url]: https://github.com/mkosir/express-typescript-typeorm-boilerplate/actions/workflows/main.yml
-[typescript-badge]: https://badges.frapsoft.com/typescript/code/typescript.svg?v=101
-[typescript-url]: https://github.com/microsoft/TypeScript
-[prettier-badge]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg
-[prettier-url]: https://github.com/prettier/prettier
-
-## Contributing
-
-All contributions are welcome!
+### Specialty API
+- `GET /specialty` — отримати список спеціальностей
+- `GET /specialty/{id}` — отримати спеціальність за ID
+- `POST /specialty` — створити спеціальність
+- `PUT /specialty/{id}` — оновити спеціальність
+- `DELETE /specialty/{id}` — видалити 
