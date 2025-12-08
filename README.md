@@ -92,3 +92,165 @@
 - `DELETE /specialty/{id}` — видалити
 
 # POST-запити
+## Ліст лікарів
+![](img/3.png)
+## Створення медкартки
+![](img/4.png)
+## Ліст медкарт
+![](img/5.png)
+## Видалення медкартки
+![](img/6.png)
+## Після видалення
+![](img/7.png)
+## Оновлення пацієнту
+![](img/8.png)
+
+# Архітектура шарів у бекенді
+
+## 🛡️ Middleware (валідація)
+- **Роль:** перехоплює HTTP‑запит ще до контролера.
+- **Задачі:**
+  - Перевірка заголовків (`Content-Type`, токен авторизації).
+  - Валідація тіла запиту (чи всі потрібні поля, чи правильний формат).
+  - Логування, обробка помилок, фільтрація.
+- **Приклад:** якщо у `POST /doctor` немає `doctor_fullname`, middleware повертає `400 Bad Request`.
+
+---
+
+## 🎯 Controller (оркестрація)
+- **Роль:** точка входу для ендпоінта.
+- **Задачі:**
+  - Отримати дані з `req.body`, `req.params`, `req.query`.
+  - Викликати відповідний сервіс.
+  - Сформувати відповідь (JSON, статус код).
+
+---
+
+## ⚙️ Service (бізнес‑логіка)
+- **Роль:** реалізація правил предметної області.
+- **Задачі:**
+  - Перевірка бізнес‑правил (наприклад, унікальність `doctor_number`).
+  - Виклик репозиторіїв для роботи з даними.
+  - Комбінування кількох операцій (створення лікаря + графік роботи).
+
+---
+
+## 💾 Repository (доступ до даних)
+- **Роль:** шар для роботи з базою даних.
+- **Задачі:**
+  - Виконання CRUD‑операцій (`find`, `save`, `update`, `delete`).
+  - Інкапсуляція SQL/ORM запитів.
+  - Повернення сутностей у вигляді об’єктів.
+ 
+# Приклад middleware
+  
+```javascript
+  export const validatorMedcardCreate = async (req: Request, res: Response, next: NextFunction) => {
+  let { 
+    patient_id,
+    medcard_chronic, 
+    medcard_createdate,
+    medcard_bloodtype
+  } = req.body;
+  
+  const errorsValidation: ErrorValidation[] = [];
+
+  // Преобразование и тримминг
+  patient_id = !patient_id ? '' : patient_id.toString().trim();
+  medcard_chronic = !medcard_chronic ? '' : medcard_chronic.toString().trim();
+  medcard_createdate = !medcard_createdate ? '' : medcard_createdate.toString();
+  medcard_bloodtype = !medcard_bloodtype ? '' : medcard_bloodtype.toString().trim();
+
+  // Валидация patient_id
+  if (validator.isEmpty(patient_id)) {
+    errorsValidation.push({ patient_id: 'Patient ID is required' });
+  } else if (!validator.isInt(patient_id, { min: 1 })) {
+    errorsValidation.push({ patient_id: 'Patient ID must be a positive integer' });
+  } else {
+    // Проверка что пациент существует
+    try {
+      const patientRepository = getRepository(Patient);
+      const patient = await patientRepository.findOne(parseInt(patient_id));
+      if (!patient) {
+        errorsValidation.push({ patient_id: `Patient with ID ${patient_id} not found` });
+      }
+    } catch (error) {
+      errorsValidation.push({ patient_id: 'Invalid patient ID' });
+    }
+  }
+
+  // Валидация medcard_chronic (опционально)
+  if (medcard_chronic && !validator.isLength(medcard_chronic, { min: 0, max: 50 })) {
+    errorsValidation.push({ medcard_chronic: 'Chronic disease must be maximum 50 characters' });
+  }
+
+  // Валидация medcard_createdate
+  if (validator.isEmpty(medcard_createdate)) {
+    errorsValidation.push({ medcard_createdate: 'Medcard create date is required' });
+  } else if (!validator.isDate(medcard_createdate)) {
+    errorsValidation.push({ medcard_createdate: 'Medcard create date must be a valid date' });
+  }
+
+  // Валидация medcard_bloodtype
+  if (validator.isEmpty(medcard_bloodtype)) {
+    errorsValidation.push({ medcard_bloodtype: 'Blood type is required' });
+  } else {
+    const validBloodTypes = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+    if (!validBloodTypes.includes(medcard_bloodtype)) {
+      errorsValidation.push({ 
+        medcard_bloodtype: `Blood type must be one of: ${validBloodTypes.join(', ')}` 
+      });
+    }
+  }
+
+  // Проверка что у пациента еще нет медкарты
+  if (patient_id && validator.isInt(patient_id, { min: 1 })) {
+    try {
+      const medcardRepository = getRepository(Medcard);
+      const existingMedcard = await medcardRepository.findOne({
+        where: { patient_id: parseInt(patient_id) },
+      });
+      
+      if (existingMedcard) {
+        errorsValidation.push({ patient_id: `Patient with ID ${patient_id} already has a medcard` });
+      }
+    } catch (error) {
+      // Игнорируем ошибки поиска при валидации
+    }
+  }
+
+  if (errorsValidation.length !== 0) {
+    const customError = new CustomError(
+      400, 
+      'Validation', 
+      'Create medcard validation error', 
+      null, 
+      null, 
+      errorsValidation
+    );
+    return next(customError);
+  }
+  
+  return next();
+};
+```
+# Приклад responseDTO
+```javascript
+export class PatientResponseDto {
+    id: number;
+    patient_fullname: string;
+    patient_sex: string;
+    patient_registerdate: Date;
+    patient_birthdaydate: Date;
+
+    constructor(patient: Patient) {
+        this.id = patient.id;
+        this.patient_fullname = patient.patient_fullname;
+        this.patient_sex = patient.patient_sex;
+        this.patient_registerdate = patient.patient_registerdate;
+        this.patient_birthdaydate = patient.patient_birthdaydate;
+    }
+}
+```
+# Скріншоти з POSTMAN
+
