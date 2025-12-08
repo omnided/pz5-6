@@ -3,7 +3,6 @@
 ##  Реалізовані сутності
 
 ### Doctor
-- **Таблиця:** `doctor`
 - **Поля:**
   - `id` — первинний ключ
   - `specialty_id` — зовнішній ключ → `specialty.id`
@@ -17,7 +16,6 @@
 ---
 
 ### Medcard
-- **Таблиця:** `medcard`
 - **Поля:**
   - `id` — первинний ключ
   - `patient_id` — зовнішній ключ → `patient.id`
@@ -31,7 +29,6 @@
 ---
 
 ### Patient
-- **Таблиця:** `patient`
 - **Поля:**
   - `id` — первинний ключ
   - `patient_fullname` — ПІБ пацієнта (унікальне, max 40 символів)
@@ -47,7 +44,6 @@
 ---
 
 ### Specialty
-- **Таблиця:** `specialty`
 - **Поля:**
   - `id` — первинний ключ
   - `specialty_name` — назва спеціальності (varchar(30))
@@ -93,4 +89,6 @@
 - `GET /specialty/{id}` — отримати спеціальність за ID
 - `POST /specialty` — створити спеціальність
 - `PUT /specialty/{id}` — оновити спеціальність
-- `DELETE /specialty/{id}` — видалити 
+- `DELETE /specialty/{id}` — видалити
+
+# POST-запити
